@@ -1,0 +1,21 @@
+name: afp
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - keras
+  - jupyterlab
+  - lightgbm
+  - matplotlib
+  - notebook
+  - numpy
+  - pandas
+  - pandas-profiling
+  - pandas-datareader
+  - scikit-learn
+  - scikit-optimize
+  - statsmodels
+  - tensorflow
+  - xgboost
+
