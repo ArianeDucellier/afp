@@ -4,6 +4,8 @@ Scripts for ARMA models for time series analysis
 
 import numpy as np
 
+from math import sqrt
+
 def ACVF(X, h):
     """
     Compute the autocovariance function of a univariate time series
@@ -49,11 +51,21 @@ def ACF(X, h):
 
     return acf
 
-def LD_recursions(gamma, N):
+def LD_recursions(gamma):
     """
     Use Levinson-Durbin recursions to compute the coefficients
     of the best linear predictor for the time series
+    Input:
+      gamma = 1D numpy array, autocovariance function of the time series
+    Output:
+      Phi = 2D numpy array, Phi[i - 1, j - 1] = phi_ij, i=1,..,N j=1,...,i
+            Pn Xn+1 = phi_n1 Xn + ... + Phi_nn X1
+      V = 1D numpy array, mean squared error of best linear predictor
+            Vn = E(Xn+1 - PnXn+1)^2 
     """
+    assert len(gamma) >= 3, \
+       'The autocovariance must have lag h >= 2'
+    N = len(gamma) - 1
     Phi = np.zeros((N, N))
     Phi[0, 0] = gamma[1] / gamma[0]
     V = np.zeros(N + 1)
@@ -70,8 +82,45 @@ def LD_recursions(gamma, N):
 def PACF(X, h):
     """
     Compute the partial autocorrelation function
+    Input:
+      X = 1D numpy array
+      h = Integer, time lag up to which we compute the ACVF
+    Output:
+      pacf = 1D numpy array
     """
+    assert isinstance(h, int), \
+        'The lag of the partial autocorrelation should be an integer'
+    assert h >= 1, \
+        'The lag should be higher or equal to 1'
+
     gamma = ACVF(X, h)
-    (Phi, V) = LD_recursions(gamma, h)
+    (Phi, V) = LD_recursions(gamma)
     pacf = np.diag(Phi)
     return pacf
+
+def ARP_yule_walker(X, p):
+    """
+    Estimate the parameters phi_p and sigma2 of an AR(p) process
+    using Yule-Walker estimation
+    Input:
+      X = 1D numpy array
+      p = Order of th AR(p) process
+    Output:
+      phi = 1D numpy array
+      sigma = Standard deviation of the white noise
+    """
+    assert isinstance(p, int), \
+        'The order of the AR(p) process should be an integer'
+    assert p >= 1, \
+        'The order of the AR(p) process should be higher or equal to 1'
+
+    acvf = ACVF(X, p)
+    Gamma = np.zeros((p, p))
+    gamma = np.zeros(p)
+    for i in range(0, p):
+        gamma[i] = acvf[i + 1]
+        for j in range(0, p):
+            Gamma[i, j] = acvf[abs(i - j)]
+    phi = np.linalg.solve(Gamma, gamma)
+    sigma = sqrt(acvf[0] - np.sum(phi * gamma))
+    return (phi, sigma)
