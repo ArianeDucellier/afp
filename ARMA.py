@@ -124,3 +124,17 @@ def ARP_yule_walker(X, p):
     phi = np.linalg.solve(Gamma, gamma)
     sigma = sqrt(acvf[0] - np.sum(phi * gamma))
     return (phi, sigma)
+
+def MA1_grid_search(X, thetas):
+    """
+    Estimate the best value of theta by minimizing the sum of the 
+    squared errors of MA(1) process.
+    """
+    N = len(X)
+    errors = np.zeros(len(thetas))
+    for count, theta in enumerate(thetas):
+        for i in range(2, N + 1):
+            errors[count] = errors[count] + (X[i - 1] + \
+                np.sum(np.power(-theta, np.arange(1, i)) * np.flip(X[0:(i - 1)]))) ** 2.0
+    index = np.argmin(errors)
+    return (thetas[index], errors)
