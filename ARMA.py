@@ -3,6 +3,7 @@ Scripts for ARMA models for time series analysis
 """
 
 import numpy as np
+import torch
 
 from math import sqrt
 
@@ -138,3 +139,38 @@ def MA1_grid_search(X, thetas):
                 np.sum(np.power(-theta, np.arange(1, i)) * np.flip(X[0:(i - 1)]))) ** 2.0
     index = np.argmin(errors)
     return (thetas[index], errors)
+
+def step_least_squares(X, theta, alpha):
+    """
+    Compute one step of the gradient descent
+    for the least square method
+    """
+    LS = 0
+    N = X.size()[0]
+    for i in range(2, N + 1):
+        LS = LS + (X[i - 1] + \
+            torch.sum(torch.pow(-theta, torch.arange(1, i)) * \
+            torch.flip(X[0:(i - 1)], [0]))) ** 2.0
+    LS.backward()
+    dtheta = theta.grad
+    theta = theta - alpha * dtheta
+    theta.retain_grad()
+    return (theta, LS)
+
+def MA1_gradient(X, max_iter, alpha):
+    """
+    Estimate the best value of theta by minimizing the sum of the 
+    squared errors of MA(1) process.
+    """
+    theta = torch.rand(1, requires_grad=True)
+    X = torch.from_numpy(X)
+    i_iter = 0
+    thetas = [theta.detach().numpy()[0]]
+    loss = []
+    while (i_iter < max_iter):
+        (theta, LS) = step_least_squares(X, theta, alpha)
+        thetas.append(theta.detach().numpy()[0])
+        loss.append(LS.detach().numpy())
+        i_iter = i_iter + 1
+    return (thetas, loss)
+    
