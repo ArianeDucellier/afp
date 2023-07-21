@@ -9,7 +9,7 @@ Methods to be implemented:
 - Durbin-Levinson - Done
 - PACF - Done
 - Fitting of MA(1) method - Done
-- Innovation algorithm
+- Innovation algorithm - Done
 - Yule-Walker - Done
 - Burg's algorithm
 - Hannan-Rissanen algorithm

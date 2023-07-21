@@ -99,6 +99,33 @@ def PACF(X, h):
     pacf = np.diag(Phi)
     return pacf
 
+def innovations(gamma):
+    """
+    Use the innovation algorithm to compute the coefficients
+    of the best linear predictor for the time series
+    Input:
+      gamma = 1D numpy array, autocovariance function of the time series
+    Output:
+      Theta = 2D numpy array, Theta[i - 1, j - 1] = theta_ij, i=1,..,N j=1,...,i
+            Pn Xn+1 = theta_n1 (Xn - Pn-1 Xn) + ... + theta_nn (X1 - P0 X1)
+      V = 1D numpy array, mean squared error of best linear predictor
+            Vn = E(Xn+1 - PnXn+1)^2 
+    """
+    assert len(gamma) >= 3, \
+       'The autocovariance must have lag h >= 2'
+    N = len(gamma) - 1
+    Theta = np.zeros((N + 1, N + 1))
+    Theta[1, 0] = gamma[1] / gamma[0]
+    V = np.zeros(N + 1)
+    V[0] = gamma[0]
+    V[1] = gamma[0] - (Theta[1, 0] ** 2) * V[0]
+    for n in range(2, N + 1):
+        for k in range(0, n):
+            Theta[n, k] = (gamma[n - k] -
+                np.sum(Theta[k, 0:k] * Theta[n, 0:k] * V[0:k])) / V[k]
+        V[n] = gamma[0] - np.sum(np.square(Theta[n, 0:n]) * V[0:n]) 
+    return (Theta, V)
+
 def ARP_yule_walker(X, p):
     """
     Estimate the parameters phi_p and sigma2 of an AR(p) process
